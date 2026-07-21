@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Client Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans antialiased overflow-hidden">
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="flex h-full flex-col">
+
+        <!-- TOP BAR / HEADER -->
+        <header class="h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center justify-between px-4 z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2 font-bold text-lg text-brand-600 dark:text-brand-500">
+                    <i data-lucide="mail" class="w-6 h-6"></i>
+                    <span>MailDesk</span>
+                </div>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <div class="flex-1 max-w-xl mx-4">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="search-input" placeholder="Search emails..." 
+                        class="w-full pl-9 pr-8 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <button id="filter-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- UTILITY ACTIONS -->
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
+                     alt="Profile" class="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700 object-cover">
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT (3 PANELS) -->
+        <div class="flex flex-1 overflow-hidden relative">
+
+            <!-- PANEL 1: SIDEBAR -->
+            <aside id="sidebar" class="absolute md:relative z-20 w-64 h-full bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-200 -translate-x-full md:translate-x-0 shrink-0">
+                <div class="p-4">
+                    <button id="open-compose" class="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white py-2.5 px-4 rounded-xl font-medium shadow-sm transition">
+                        <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                        <span>Compose</span>
+                    </button>
+                </div>
+
+                <nav class="flex-1 px-2 space-y-1 overflow-y-auto custom-scrollbar">
+                    <button data-folder="inbox" class="nav-item active flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium text-brand-600 bg-brand-50 dark:bg-brand-950/50">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="inbox" class="w-4 h-4"></i>
+                            <span>Inbox</span>
+                        </div>
+                        <span id="unread-count" class="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                    <button data-folder="sent" class="nav-item flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span>Sent</span>
+                        </div>
+                    </button>
+                    <button data-folder="drafts" class="nav-item flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="file" class="w-4 h-4"></i>
+                            <span>Drafts</span>
+                        </div>
+                    </button>
+                    <button data-folder="trash" class="nav-item flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Trash</span>
+                        </div>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- PANEL 2: EMAIL LIST -->
+            <section id="list-pane" class="w-full md:w-80 lg:w-96 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0">
+                <!-- BULK TOOLBAR -->
+                <div class="h-12 border-b border-gray-200 dark:border-gray-800 px-4 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="select-all" class="rounded border-gray-300 dark:border-gray-700 text-brand-600 focus:ring-brand-500">
+                        <span class="text-xs text-gray-500">Select All</span>
+                    </div>
+                    <div id="bulk-actions" class="hidden flex items-center gap-1">
+                        <button id="bulk-read" title="Mark as Read" class="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+                            <i data-lucide="mail-open" class="w-4 h-4"></i>
+                        </button>
+                        <button id="bulk-delete" title="Delete Selected" class="p-1.5 text-gray-500 hover:text-red-600 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+                            <i data-lucide="trash" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIST -->
+                <div id="email-list" class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-gray-800">
+                    <!-- Dynamic rendering here -->
+                </div>
+            </section>
+
+            <!-- PANEL 3: READING PANE -->
+            <main id="reading-pane" class="hidden md:flex flex-1 bg-gray-50 dark:bg-gray-950 flex-col overflow-y-auto custom-scrollbar">
+                <div id="no-email-selected" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+                    <i data-lucide="mail-search" class="w-12 h-12 mb-2 stroke-1"></i>
+                    <p class="text-sm">Select an email to view its contents</p>
+                </div>
+
+                <div id="reading-content" class="hidden flex-1 flex-col">
+                    <!-- Top Action Bar -->
+                    <div class="h-12 border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between bg-white dark:bg-gray-900 shrink-0">
+                        <button id="back-to-list-btn" class="md:hidden flex items-center gap-1 text-sm text-gray-500">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <button id="single-delete" class="p-1.5 text-gray-500 hover:text-red-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Email Body Container -->
+                    <div class="p-6 max-w-4xl mx-auto w-full space-y-6">
+                        <div class="flex items-start justify-between">
+                            <h1 id="view-subject" class="text-xl font-semibold text-gray-900 dark:text-white"></h1>
+                        </div>
+
+                        <div class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800">
+                            <div class="flex items-center gap-3">
+                                <img id="view-avatar" src="" class="w-10 h-10 rounded-full object-cover">
+                                <div>
+                                    <div id="view-sender" class="font-medium text-sm"></div>
+                                    <div id="view-email" class="text-xs text-gray-500"></div>
+                                </div>
+                            </div>
+                            <span id="view-time" class="text-xs text-gray-400"></span>
+                        </div>
+
+                        <div id="view-body" class="text-sm leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-line space-y-4"></div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-6 border-t border-gray-200 dark:border-gray-800 flex gap-3">
+                            <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-white dark:hover:bg-gray-800">
+                                <i data-lucide="reply" class="w-4 h-4"></i> Reply
+                            </button>
+                            <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-white dark:hover:bg-gray-800">
+                                <i data-lucide="forward" class="w-4 h-4"></i> Forward
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- COMPOSE MODAL -->
+    <div id="compose-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-gray-900 w-full sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-xl flex flex-col overflow-hidden">
+            <div class="px-4 py-3 bg-gray-100 dark:bg-gray-800 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                <h3 class="font-semibold text-sm">New Message</h3>
+                <button id="close-compose" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="compose-form" class="p-4 space-y-3">
+                <input type="email" required placeholder="To" class="w-full px-3 py-1.5 text-sm bg-transparent border-b border-gray-200 dark:border-gray-800 focus:outline-none focus:border-brand-500">
+                <input type="text" required id="compose-subject" placeholder="Subject" class="w-full px-3 py-1.5 text-sm bg-transparent border-b border-gray-200 dark:border-gray-800 focus:outline-none focus:border-brand-500">
+                <textarea required id="compose-body" rows="8" placeholder="Write your message..." class="w-full p-3 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // MOCK DATA
+        let emails = [
+            { id: 1, sender: "Alex Rivera", email: "alex@designsystem.io", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80", subject: "Design System Specs Updated", preview: "Hey team, I've updated the Figma tokens for the dark theme...", body: "Hey team,\n\nI've updated the Figma tokens for the dark theme. Please take a look at the component specs when you get a chance.\n\nBest,\nAlex", time: "10:42 AM", folder: "inbox", unread: true, starred: false },
+            { id: 2, sender: "GitHub Notifications", email: "noreply@github.com", avatar: "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=100&auto=format&fit=crop&q=80", subject: "[One-File-Tools] PR #619 Created", preview: "Praveen created pull request #619: Add Email Client Interface...", body: "Praveen created pull request #619: Add Email Client Interface.\n\nReview requested for design architecture.", time: "Yesterday", folder: "inbox", unread: true, starred: true },
+            { id: 3, sender: "Tech Conference", email: "events@techconf.org", avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80", subject: "Your Speaker Confirmation", preview: "Congratulations! Your proposal for the frontend architecture panel...", body: "Congratulations!\n\nYour proposal for the frontend architecture panel has been accepted. We look forward to having you speak.", time: "Oct 12", folder: "inbox", unread: false, starred: false }
+        ];
+
+        let currentFolder = "inbox";
+        let activeEmailId = null;
+        let selectedIds = new Set();
+
+        // ELEMENT REFERENCES
+        const emailListEl = document.getElementById('email-list');
+        const selectAllCb = document.getElementById('select-all');
+        const bulkActionsEl = document.getElementById('bulk-actions');
+        const searchInput = document.getElementById('search-input');
+
+        // INITIALIZE APP
+        function init() {
+            lucide.createIcons();
+            renderList();
+            updateUnreadCounts();
+            setupEventListeners();
+        }
+
+        // RENDER EMAIL LIST
+        function renderList() {
+            const query = searchInput.value.toLowerCase();
+            const filtered = emails.filter(e => e.folder === currentFolder && (e.subject.toLowerCase().includes(query) || e.sender.toLowerCase().includes(query)));
+
+            emailListEl.innerHTML = filtered.length === 0 ? 
+                `<div class="p-8 text-center text-gray-400 text-sm">No emails found in ${currentFolder}</div>` : '';
+
+            filtered.forEach(email => {
+                const item = document.createElement('div');
+                item.className = `p-4 flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${email.unread ? 'bg-white dark:bg-gray-900 font-semibold' : 'bg-gray-50/50 dark:bg-gray-900/40 text-gray-600 dark:text-gray-400'} ${activeEmailId === email.id ? '!bg-brand-50 dark:!bg-brand-950/40 border-l-4 border-brand-600' : ''}`;
+                
+                item.innerHTML = `
+                    <input type="checkbox" data-id="${email.id}" class="email-select mt-1 rounded border-gray-300 dark:border-gray-700 text-brand-600 focus:ring-brand-500" ${selectedIds.has(email.id) ? 'checked' : ''}>
+                    <button data-id="${email.id}" class="star-btn mt-1 text-gray-300 hover:text-amber-400 ${email.starred ? 'text-amber-400' : ''}">
+                        <i data-lucide="star" class="w-4 h-4 ${email.starred ? 'fill-amber-400' : ''}"></i>
+                    </button>
+                    <div class="flex-1 min-w-0" onclick="selectEmail(${email.id})">
+                        <div class="flex items-center justify-between text-xs mb-1">
+                            <span class="truncate font-medium text-gray-900 dark:text-white">${email.sender}</span>
+                            <span class="text-gray-400 shrink-0">${email.time}</span>
+                        </div>
+                        <div class="text-xs text-gray-900 dark:text-gray-100 truncate mb-1">${email.subject}</div>
+                        <div class="text-xs text-gray-400 truncate font-normal">${email.preview}</div>
+                    </div>
+                `;
+                emailListEl.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        // SELECT EMAIL
+        window.selectEmail = function(id) {
+            activeEmailId = id;
+            const email = emails.find(e => e.id === id);
+            if (email) {
+                email.unread = false;
+                updateUnreadCounts();
+                renderList();
+
+                // Populate Reading Pane
+                document.getElementById('no-email-selected').classList.add('hidden');
+                const readingContent = document.getElementById('reading-content');
+                readingContent.classList.remove('hidden');
+                readingContent.classList.add('flex');
+
+                document.getElementById('view-subject').textContent = email.subject;
+                document.getElementById('view-sender').textContent = email.sender;
+                document.getElementById('view-email').textContent = email.email;
+                document.getElementById('view-avatar').src = email.avatar;
+                document.getElementById('view-time').textContent = email.time;
+                document.getElementById('view-body').textContent = email.body;
+
+                // Responsive Pane Switching
+                if (window.innerWidth < 768) {
+                    document.getElementById('list-pane').classList.add('hidden');
+                    document.getElementById('reading-pane').classList.remove('hidden');
+                    document.getElementById('reading-pane').classList.add('flex');
+                }
+            }
+        };
+
+        // UPDATE UNREAD COUNTS
+        function updateUnreadCounts() {
+            const count = emails.filter(e => e.folder === 'inbox' && e.unread).length;
+            document.getElementById('unread-count').textContent = count;
+        }
+
+        // EVENT LISTENERS Setup
+        function setupEventListeners() {
+            // Theme Toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+
+            // Navigation Folders
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'bg-brand-50', 'dark:bg-brand-950/50', 'text-brand-600'));
+                    const target = e.currentTarget;
+                    target.classList.add('active', 'bg-brand-50', 'dark:bg-brand-950/50', 'text-brand-600');
+                    currentFolder = target.dataset.folder;
+                    activeEmailId = null;
+                    document.getElementById('reading-content').classList.add('hidden');
+                    document.getElementById('no-email-selected').classList.remove('hidden');
+                    renderList();
+                });
+            });
+
+            // Search
+            searchInput.addEventListener('input', renderList);
+
+            // Compose Modal
+            const composeModal = document.getElementById('compose-modal');
+            document.getElementById('open-compose').addEventListener('click', () => composeModal.classList.remove('hidden'));
+            document.getElementById('close-compose').addEventListener('click', () => composeModal.classList.add('hidden'));
+
+            document.getElementById('compose-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const subject = document.getElementById('compose-subject').value;
+                const body = document.getElementById('compose-body').value;
+
+                emails.unshift({
+                    id: Date.now(),
+                    sender: "Me",
+                    email: "me@domain.com",
+                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+                    subject: subject,
+                    preview: body.substring(0, 40) + '...',
+                    body: body,
+                    time: "Just now",
+                    folder: "sent",
+                    unread: false,
+                    starred: false
+                });
+
+                composeModal.classList.add('hidden');
+                e.target.reset();
+                renderList();
+            });
+
+            // Item Interactions (Star / Checkbox delegation)
+            emailListEl.addEventListener('click', (e) => {
+                const starBtn = e.target.closest('.star-btn');
+                if (starBtn) {
+                    const id = parseInt(starBtn.dataset.id);
+                    const email = emails.find(item => item.id === id);
+                    if (email) email.starred = !email.starred;
+                    renderList();
+                    return;
+                }
+
+                const checkbox = e.target.closest('.email-select');
+                if (checkbox) {
+                    const id = parseInt(checkbox.dataset.id);
+                    if (checkbox.checked) selectedIds.add(id);
+                    else selectedIds.delete(id);
+                    
+                    bulkActionsEl.classList.toggle('hidden', selectedIds.size === 0);
+                }
+            });
+
+            // Select All Checkbox
+            selectAllCb.addEventListener('change', (e) => {
+                const visibleIds = emails.filter(e => e.folder === currentFolder).map(e => e.id);
+                if (e.target.checked) {
+                    visibleIds.forEach(id => selectedIds.add(id));
+                } else {
+                    selectedIds.clear();
+                }
+                bulkActionsEl.classList.toggle('hidden', selectedIds.size === 0);
+                renderList();
+            });
+
+            // Bulk Delete
+            document.getElementById('bulk-delete').addEventListener('click', () => {
+                emails.forEach(e => {
+                    if (selectedIds.has(e.id)) e.folder = 'trash';
+                });
+                selectedIds.clear();
+                bulkActionsEl.classList.add('hidden');
+                selectAllCb.checked = false;
+                renderList();
+            });
+
+            // Mobile Navigation Toggle
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('-translate-x-full');
+            });
+
+            // Mobile Back Button
+            document.getElementById('back-to-list-btn').addEventListener('click', () => {
+                document.getElementById('list-pane').classList.remove('hidden');
+                document.getElementById('reading-pane').classList.add('hidden');
+            });
+        }
+
+        init();
+        document.getElementById('compose-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const subject = document.getElementById('compose-subject').value;
+    const body = document.getElementById('compose-body').value;
+
+    emails.unshift({
+        id: Date.now(),
+        sender: "Me",
+        email: "me@domain.com",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        subject: subject,
+        preview: body.substring(0, 40) + '...',
+        body: body,
+        time: "Just now",
+        folder: "sent",
+        unread: false,
+        starred: false
+    });
+
+    composeModal.classList.add('hidden');
+    e.target.reset();
+
+    // AUTO-SWITCH TO SENT FOLDER AFTER COMPOSING
+    currentFolder = 'sent';
+    document.querySelectorAll('.nav-item').forEach(i => {
+        i.classList.remove('active', 'bg-brand-50', 'dark:bg-brand-950/50', 'text-brand-600');
+        if (i.dataset.folder === 'sent') {
+            i.classList.add('active', 'bg-brand-50', 'dark:bg-brand-950/50', 'text-brand-600');
+        }
+    });
+
+    renderList();
+});
+    </script>
+</body>
+</html>
